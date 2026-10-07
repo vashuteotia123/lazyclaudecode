@@ -60,7 +60,7 @@ html,body{margin:0;background:#0d1117}
 #term{padding:12px 14px;color:#c9d1d9;font:14px/17px Menlo,'DejaVu Sans Mono',Consolas,monospace;white-space:pre}
 #term div{height:17px}
 i{display:inline-block;width:1ch;text-align:center;font-style:normal}
-</style><div id="win"><div id="bar"><b></b><b></b><b></b><span>lazycode</span></div><div id="term">${rows.map(rowHtml).join('')}</div></div>
+</style><div id="win"><div id="bar"><b></b><b></b><b></b><span>lazyclaudecode</span></div><div id="term">${rows.map(rowHtml).join('')}</div></div>
 <script>const r=document.getElementById('win').getBoundingClientRect();document.title=Math.ceil(r.width)+'x'+Math.ceil(r.height)</script>`;
 
 function findChrome() {
@@ -75,7 +75,7 @@ function findChrome() {
   return known.find((c) => !spawnSync(c, ['--version']).error);
 }
 
-const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'lazycode-shots-'));
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'lazyclaudecode-shots-'));
 const home = path.join(tmp, 'home');
 // The app must see the fictional home before it loads, so paths print as ~/code/….
 process.env.HOME = process.env.USERPROFILE = home;

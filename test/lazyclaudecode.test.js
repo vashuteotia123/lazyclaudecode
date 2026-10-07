@@ -15,7 +15,7 @@ const B = '22222222-2222-4222-8222-222222222222';
 // A Claude home holding one session with a rewind fork, parallel tool calls and a compaction whose
 // logical parent is absent, plus a second session forked from it.
 function fixture() {
-  const cd = fs.mkdtempSync(path.join(os.tmpdir(), 'lazycode-'));
+  const cd = fs.mkdtempSync(path.join(os.tmpdir(), 'lazyclaudecode-'));
   const cwd = path.join(cd, 'work', 'my.proj');
   fs.mkdirSync(cwd, { recursive: true });
   const dir = path.join(cd, 'projects', munge(cwd));
@@ -88,7 +88,7 @@ test('the cache returns the same summaries', () => {
   const cold = scan({ cd });
   const warm = scan({ cd });
   assert.deepEqual(warm.byId.get(A).tree, cold.byId.get(A).tree);
-  assert.ok(fs.existsSync(path.join(cd, 'lazycode', 'cache', 'index.json')));
+  assert.ok(fs.existsSync(path.join(cd, 'lazyclaudecode', 'cache', 'index.json')));
 });
 
 test('transcripts follow one branch', () => {
@@ -229,7 +229,7 @@ test('the interface renders and acts on keys', () => {
 });
 
 test('the demo home shows every feature the screenshots rely on', () => {
-  const { cd, hero } = buildDemoHome(fs.mkdtempSync(path.join(os.tmpdir(), 'lazycode-demo-')), { livePids: [process.pid] });
+  const { cd, hero } = buildDemoHome(fs.mkdtempSync(path.join(os.tmpdir(), 'lazyclaudecode-demo-')), { livePids: [process.pid] });
   const data = scan({ cd, useCache: false });
   const s = data.byId.get(hero);
   assert.deepEqual([s.branches, s.agents.length, s.live?.status], [3, 2, 'idle']);

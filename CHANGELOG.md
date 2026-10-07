@@ -12,4 +12,4 @@ First release.
 - Filter the list, and search inside transcripts with highlighted matches.
 - Trash with undo, restore and purge.
 - Export a session, branch or subagent as markdown.
-- `lazycode list`, `lazycode search` and `lazycode export` for use from the shell.
+- `lazyclaudecode list`, `lazyclaudecode search` and `lazyclaudecode export` for use from the shell.

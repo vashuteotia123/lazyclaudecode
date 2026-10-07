@@ -441,7 +441,7 @@ export function createApp({ cd = claudeDir(), sync = false, useCache = true, cwd
 
   function frame(W = 100, H = 30) {
     const v = view();
-    if (W < 60 || H < 14) return { rows: Array.from({ length: H }, (_, i) => fit(i ? '' : 'lazycode needs at least 60×14.', W)) };
+    if (W < 60 || H < 14) return { rows: Array.from({ length: H }, (_, i) => fit(i ? '' : 'lazyclaudecode needs at least 60×14.', W)) };
     const body = H - 1;
     const lw = clamp(Math.floor(W * 0.4), 34, 64);
     const rw = W - lw;

@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Something lazycode should do
+about: Something lazyclaudecode should do
 labels: enhancement
 ---
 

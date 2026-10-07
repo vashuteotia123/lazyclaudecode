@@ -6,19 +6,19 @@ the approach can be agreed before you write it.
 ## Setup
 
 ```sh
-git clone https://github.com/vashuteotia123/lazycode.git && cd lazycode
+git clone https://github.com/vashuteotia123/lazyclaudecode.git && cd lazyclaudecode
 npm link
 npm test
 ```
 
-There is nothing to install: lazycode has no dependencies and should stay that way. It runs on
+There is nothing to install: lazyclaudecode has no dependencies and should stay that way. It runs on
 Node 20 and later.
 
 ## Layout
 
 | File | Role |
 |---|---|
-| `bin/lazycode.js` | Command line entry point and the shell subcommands |
+| `bin/lazyclaudecode.js` | Command line entry point and the shell subcommands |
 | `src/store.js` | Read-only view of Claude Code's session store: scanning, branch trees, transcripts, search |
 | `src/ops.js` | Everything that writes: tags, rename, trash, branch checkout, export |
 | `src/tui.js` | The interface. `createApp()` is state and rendering with no terminal attached; `run()` connects it to one |
@@ -28,17 +28,17 @@ Node 20 and later.
 
 ## Working on it
 
-- **Never develop against your real `~/.claude`.** Build a demo home and point lazycode at it:
+- **Never develop against your real `~/.claude`.** Build a demo home and point lazyclaudecode at it:
 
   ```sh
-  node scripts/demo-home.js /tmp/lazycode-demo
-  HOME=/tmp/lazycode-demo CLAUDE_CONFIG_DIR=/tmp/lazycode-demo/.claude lazycode
+  node scripts/demo-home.js /tmp/lazyclaudecode-demo
+  HOME=/tmp/lazyclaudecode-demo CLAUDE_CONFIG_DIR=/tmp/lazyclaudecode-demo/.claude lazyclaudecode
   ```
 
-- `lazycode --frame 120x36 --keys 'jj3'` prints one frame as text after some keystrokes, which is
+- `lazyclaudecode --frame 120x36 --keys 'jj3'` prints one frame as text after some keystrokes, which is
   the quickest way to check a rendering change.
 - Tests build their own fixtures in a temporary folder. Add a test for any change to how sessions
-  are read or written; `test/lazycode.test.js` shows how to build a session file by hand.
+  are read or written; `test/lazyclaudecode.test.js` shows how to build a session file by hand.
 - If a change alters what the interface looks like, run `npm run screenshots` and commit the
   result. Add to the demo home if a new feature is not visible in it.
 
