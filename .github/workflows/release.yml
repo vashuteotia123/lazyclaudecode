@@ -1,0 +1,43 @@
+name: release
+# Publishing a GitHub release for tag vX.Y.Z publishes that version to npm and attaches the
+# package to the release. npm authenticates this workflow through trusted publishing, so there is
+# no token to store: https://docs.npmjs.com/trusted-publishers
+on:
+  release:
+    types: [published]
+permissions:
+  contents: write
+  id-token: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - run: npm install -g npm@latest
+      - run: npm test
+      - name: Check the tag matches package.json
+        id: version
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match package.json version $version"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Publish to npm
+        run: |
+          if npm view "lazycode@${{ steps.version.outputs.version }}" version >/dev/null 2>&1; then
+            echo "lazycode@${{ steps.version.outputs.version }} is already on npm; skipping."
+          else
+            npm publish --access public
+          fi
+      - name: Attach the package to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          npm pack
+          gh release upload "$GITHUB_REF_NAME" lazycode-*.tgz --clobber

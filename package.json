@@ -1,0 +1,19 @@
+{
+  "name": "lazycode",
+  "version": "0.1.0",
+  "description": "A lazygit-style terminal UI for Claude Code sessions: projects, branches, forks, search.",
+  "keywords": ["claude", "claude-code", "tui", "terminal", "cli", "lazygit", "sessions", "session-manager"],
+  "homepage": "https://github.com/vashuteotia123/lazycode#readme",
+  "bugs": "https://github.com/vashuteotia123/lazycode/issues",
+  "repository": { "type": "git", "url": "git+https://github.com/vashuteotia123/lazycode.git" },
+  "author": "vashuteotia123",
+  "type": "module",
+  "bin": { "lazycode": "bin/lazycode.js" },
+  "files": ["bin", "src"],
+  "scripts": {
+    "test": "node --test",
+    "screenshots": "node scripts/screenshots.js"
+  },
+  "engines": { "node": ">=20" },
+  "license": "MIT"
+}
