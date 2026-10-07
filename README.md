@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/logo.svg" alt="lazyclaudecode" width="560">
+  <img src="docs/lazyclaudecode-logo.svg" alt="lazyclaudecode" width="560">
 </p>
 
 <p align="center">
