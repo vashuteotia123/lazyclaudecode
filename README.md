@@ -137,7 +137,7 @@ Tool output can contain secrets, so read a full export before sharing it.
 lazyclaudecode needs Node 20 or later and the `claude` command on your PATH. It has no dependencies.
 
 ```sh
-npm install -g lazyclaudecode
+npm install -g @vashuteotia123/lazyclaudecode
 lazycc
 ```
 

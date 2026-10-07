@@ -1,5 +1,5 @@
 {
-  "name": "lazyclaudecode",
+  "name": "@vashuteotia123/lazyclaudecode",
   "version": "0.1.0",
   "description": "A lazygit-style terminal UI for Claude Code sessions: projects, branches, forks, search.",
   "keywords": ["claude", "claude-code", "tui", "terminal", "cli", "lazygit", "sessions", "session-manager"],
@@ -15,5 +15,6 @@
     "screenshots": "node scripts/screenshots.js"
   },
   "engines": { "node": ">=20" },
+  "publishConfig": { "access": "public" },
   "license": "MIT"
 }
