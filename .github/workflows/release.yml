@@ -30,8 +30,8 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
       - name: Publish to npm
         run: |
-          if npm view "lazyclaudecode@${{ steps.version.outputs.version }}" version >/dev/null 2>&1; then
-            echo "lazyclaudecode@${{ steps.version.outputs.version }} is already on npm; skipping."
+          if npm view "@vashuteotia123/lazyclaudecode@${{ steps.version.outputs.version }}" version >/dev/null 2>&1; then
+            echo "Version ${{ steps.version.outputs.version }} is already on npm; skipping."
           else
             npm publish --access public
           fi
@@ -40,4 +40,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           npm pack
-          gh release upload "$GITHUB_REF_NAME" lazyclaudecode-*.tgz --clobber
+          gh release upload "$GITHUB_REF_NAME" ./*.tgz --clobber
