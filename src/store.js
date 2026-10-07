@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 export const claudeDir = () => process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
-export const dataDir = (cd = claudeDir()) => path.join(cd, 'lazycode');
+export const dataDir = (cd = claudeDir()) => path.join(cd, 'lazyclaudecode');
 // Claude Code names a project's folder after its path with every non-alphanumeric replaced.
 export const munge = (p) => p.replace(/[^a-zA-Z0-9]/g, '-');
 

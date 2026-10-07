@@ -4,14 +4,16 @@ import { readJson, scan, searchSession } from '../src/store.js';
 import { clean, fit, rel, strip, tilde } from '../src/term.js';
 import { createApp, parseKeys, run } from '../src/tui.js';
 
-const USAGE = `lazycode — a lazygit-style browser for Claude Code sessions
+const USAGE = `lazyclaudecode — a lazygit-style browser for Claude Code sessions
 
-  lazycode                   open the interface
-  lazycode list [--json]     print sessions, most recent first
-  lazycode search <query>    find sessions whose prompts or replies mention the query
-  lazycode export <id> [--full] [--out <dir>]
+  lazycc                     open the interface
+  lazycc list [--json]       print sessions, most recent first
+  lazycc search <query>      find sessions whose prompts or replies mention the query
+  lazycc export <id> [--full] [--out <dir>]
                              write one session as markdown (id may be a prefix)
-  lazycode --version         print the version
+  lazycc --version           print the version
+
+lazycc is the short name for lazyclaudecode; both run the same program.
 
 Press ? inside the interface for keys. Set CLAUDE_CONFIG_DIR to point at another Claude Code home.`;
 
@@ -37,7 +39,7 @@ else if (cmd === 'list') {
   } else table(sessions);
 } else if (cmd === 'search') {
   const q = args.slice(1).join(' ');
-  if (!q) throw new Error('usage: lazycode search <query>');
+  if (!q) throw new Error('usage: lazycc search <query>');
   const hits = new Map();
   const sessions = scan().sessions.sort((a, b) => b.updatedAt - a.updatedAt);
   for (const s of sessions) {
@@ -55,7 +57,7 @@ else if (cmd === 'list') {
   const s = found[0];
   console.log(exportMarkdown(s, { full: flag('--full'), outDir: value('--out') || loadConfig().exportDir, tags: loadMeta().sessions[s.id]?.tags || [] }));
 } else if (cmd === '--frame') {
-  // Render one frame without a terminal, after optional keystrokes: lazycode --frame 120x36 --keys 'jj3'
+  // Render one frame without a terminal, after optional keystrokes: lazycc --frame 120x36 --keys 'jj3'
   const [w, h] = (args[1] || '120x36').split('x').map(Number);
   const app = createApp({ sync: true });
   for (const k of parseKeys(JSON.parse(`"${value('--keys') || ''}"`))) {
@@ -67,6 +69,6 @@ else if (cmd === 'list') {
   console.error(`Unknown command "${cmd}".\n\n${USAGE}`);
   process.exit(1);
 } else if (!process.stdout.isTTY || !process.stdin.isTTY) {
-  console.error('lazycode needs an interactive terminal. Try "lazycode list".');
+  console.error('lazyclaudecode needs an interactive terminal. Try "lazycc list".');
   process.exit(1);
 } else run();

@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // Build a throwaway Claude Code home full of fictional sessions. The README screenshots come from
-// it, and it is a safe place to try lazycode without touching real data:
+// it, and it is a safe place to try lazyclaudecode without touching real data:
 //
-//   node scripts/demo-home.js /tmp/lazycode-demo
-//   HOME=/tmp/lazycode-demo CLAUDE_CONFIG_DIR=/tmp/lazycode-demo/.claude lazycode
+//   node scripts/demo-home.js /tmp/lazyclaudecode-demo
+//   HOME=/tmp/lazyclaudecode-demo CLAUDE_CONFIG_DIR=/tmp/lazyclaudecode-demo/.claude lazyclaudecode
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -265,7 +265,7 @@ export function buildDemoHome(home, { now = Date.now(), livePids = [] } = {}) {
   const { byId } = scan({ cd, useCache: false });
   const trashed = trashSessions(doomed.map((id) => byId.get(id)), cd);
   [2 * HOUR, 3 * DAY].forEach((age, i) => {
-    const file = path.join(cd, 'lazycode', 'trash', trashed[i], 'manifest.json');
+    const file = path.join(cd, 'lazyclaudecode', 'trash', trashed[i], 'manifest.json');
     writeJson(file, { ...JSON.parse(fs.readFileSync(file, 'utf8')), deletedAt: now - age });
   });
   return { cd, hero };
@@ -282,5 +282,5 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.exit(1);
   }
   const { cd } = buildDemoHome(path.resolve(home));
-  console.log(`Demo home ready. Try it with:\n\n  HOME=${path.resolve(home)} CLAUDE_CONFIG_DIR=${cd} lazycode`);
+  console.log(`Demo home ready. Try it with:\n\n  HOME=${path.resolve(home)} CLAUDE_CONFIG_DIR=${cd} lazyclaudecode`);
 }

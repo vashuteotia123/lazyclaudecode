@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/logo.svg" alt="lazycode" width="560">
+  <img src="docs/logo.svg" alt="lazyclaudecode" width="560">
 </p>
 
 <p align="center">
@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/vashuteotia123/lazycode/actions/workflows/test.yml"><img src="https://github.com/vashuteotia123/lazycode/actions/workflows/test.yml/badge.svg" alt="tests"></a>
+  <a href="https://github.com/vashuteotia123/lazyclaudecode/actions/workflows/test.yml"><img src="https://github.com/vashuteotia123/lazyclaudecode/actions/workflows/test.yml/badge.svg" alt="tests"></a>
   <img src="https://img.shields.io/badge/node-%E2%89%A520-3fb950" alt="Node 20 or later">
   <img src="https://img.shields.io/badge/dependencies-0-3fb950" alt="no dependencies">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license"></a>
@@ -21,10 +21,10 @@
   <a href="#what-it-touches">What it touches</a>
 </p>
 
-lazycode is a terminal browser for Claude Code sessions, in the spirit of
+lazyclaudecode is a terminal browser for Claude Code sessions, in the spirit of
 [lazygit](https://github.com/jesseduffield/lazygit). Claude Code remembers everything: every
 conversation in every project, including the attempts you rewound away from. It just does not give
-you a good way to look at it all. lazycode does:
+you a good way to look at it all. lazyclaudecode does:
 
 - **One list for all projects**, with running sessions marked and worktrees grouped under their
   repository.
@@ -36,7 +36,7 @@ you a good way to look at it all. lazycode does:
 It is a single command with no dependencies, it makes no network requests, and it never rewrites a
 session file.
 
-![lazycode showing projects, sessions, a branch tree and a transcript](docs/screenshots/overview.png)
+![lazyclaudecode showing projects, sessions, a branch tree and a transcript](docs/screenshots/overview.png)
 
 Every screenshot here is generated from a fictional demo home, not from real sessions.
 
@@ -57,7 +57,7 @@ over a dozen projects. Getting back to the right one is harder than it should be
 - **Nothing gets cleaned up.** Empty and throwaway sessions pile up, and deleting files by hand
   from `~/.claude/projects` is not something anyone should do casually.
 
-lazygit made git's hidden state visible and navigable from the keyboard. lazycode tries to do the
+lazygit made git's hidden state visible and navigable from the keyboard. lazyclaudecode tries to do the
 same for Claude Code's session store.
 
 ## What it can do
@@ -76,17 +76,17 @@ Three panels on the left and a detail pane on the right:
   the transcript, condensed so that a long tool run takes one line. Press `z` for the full text.
 
 Press `enter` to resume the selected session in Claude Code, `f` to fork it, or `c` to start a new
-one in the same project. When you leave Claude Code you are back in lazycode.
+one in the same project. When you leave Claude Code you are back in lazyclaudecode.
 
 ### Recover branches you rewound away from
 
 ![The branches panel with an abandoned branch selected](docs/screenshots/branches.png)
 
-lazycode reads the whole session file and draws every continuation as a tree, with `*` on the
+lazyclaudecode reads the whole session file and draws every continuation as a tree, with `*` on the
 branch the session is currently on. Select an abandoned branch to read it; the transcript marks
 where that branch starts.
 
-Press `enter` on an abandoned branch, or on a fork point, to check it out: lazycode writes that
+Press `enter` on an abandoned branch, or on a fork point, to check it out: lazyclaudecode writes that
 branch's history to a new session and resumes it. The original session is never modified.
 
 Three different things are shown in this panel:
@@ -101,7 +101,7 @@ Three different things are shown in this panel:
 
 ![Search results for "backoff" with matches highlighted](docs/screenshots/search.png)
 
-Press `s` and type a phrase. lazycode searches what you typed and what Claude replied, on every
+Press `s` and type a phrase. lazyclaudecode searches what you typed and what Claude replied, on every
 branch of every session, and narrows the list to the sessions that mention it with a match count
 on each. The transcript opens at the first match; `n` and `N` step through the rest.
 
@@ -123,7 +123,7 @@ For a quicker cut, `/` filters the list as you type by title, prompt, git branch
 
 ![The trash, holding two deleted sessions](docs/screenshots/trash.png)
 
-`d` moves a session and its subagents into lazycode's own trash, and `u` undoes it. Nothing is
+`d` moves a session and its subagents into lazyclaudecode's own trash, and `u` undoes it. Nothing is
 removed for good until you purge it from the trash (`T`). A running session cannot be deleted, and
 resuming one asks first.
 
@@ -134,18 +134,21 @@ Tool output can contain secrets, so read a full export before sharing it.
 
 ## Install
 
-lazycode needs Node 20 or later and the `claude` command on your PATH. It has no dependencies.
+lazyclaudecode needs Node 20 or later and the `claude` command on your PATH. It has no dependencies.
 
 ```sh
-npm install -g lazycode
-lazycode
+npm install -g lazyclaudecode
+lazycc
 ```
+
+The package installs two names for the same command: `lazyclaudecode` and the shorter `lazycc`,
+which the rest of this page uses.
 
 Or run it from a clone:
 
 ```sh
-git clone https://github.com/vashuteotia123/lazycode.git && cd lazycode
-npm link        # puts `lazycode` on your PATH
+git clone https://github.com/vashuteotia123/lazyclaudecode.git && cd lazyclaudecode
+npm link        # puts `lazyclaudecode` and `lazycc` on your PATH
 ```
 
 ## Keys
@@ -171,22 +174,22 @@ Press `?` inside the interface for the full list.
 ## From the shell
 
 ```sh
-lazycode list [--json]             # sessions, most recent first
-lazycode search <query>            # sessions whose prompts or replies mention the query
-lazycode export <id> [--full] [--out <dir>]
+lazycc list [--json]             # sessions, most recent first
+lazycc search <query>            # sessions whose prompts or replies mention the query
+lazycc export <id> [--full] [--out <dir>]
 ```
 
 ## What it touches
 
-lazycode makes no network requests. It reads `~/.claude/projects` and `~/.claude/sessions`, and
+lazyclaudecode makes no network requests. It reads `~/.claude/projects` and `~/.claude/sessions`, and
 writes in three places:
 
-- **`~/.claude/lazycode/`** holds everything of its own: `meta.json` (tags, pins, archive flags),
+- **`~/.claude/lazyclaudecode/`** holds everything of its own: `meta.json` (tags, pins, archive flags),
   `trash/`, a scan cache, and an optional `config.json`. Delete the folder and no trace is left.
 - **A session file, on rename.** It appends the same two title records `/rename` writes.
 - **A new session file, on branch checkout.**
 
-Tags, pins and archive flags are lazycode's own and do not appear in Claude Code's `/resume`
+Tags, pins and archive flags are lazyclaudecode's own and do not appear in Claude Code's `/resume`
 picker.
 
 `config.json` accepts `exportDir` (default `./claude-exports`), `refreshSeconds` (default `5`) and
@@ -194,9 +197,9 @@ picker.
 
 ## Limits
 
-- Claude Code's session format is undocumented and can change. lazycode was built and checked
+- Claude Code's session format is undocumented and can change. lazyclaudecode was built and checked
   against Claude Code 2.1.292.
-- A fork records no link to its parent, so lazycode pairs sessions that begin with the same message
+- A fork records no link to its parent, so lazyclaudecode pairs sessions that begin with the same message
   and treats the oldest as the parent. A fork of a fork shows under the original.
 - A checked-out branch does not carry file-edit checkpoints, so `/rewind` there restores the
   conversation but not code from before the checkout.
@@ -205,15 +208,15 @@ picker.
 ## Development
 
 ```sh
-npm test                                     # fixtures only, never touches ~/.claude
-lazycode --frame 120x36 --keys 'jj3'         # print one frame after some keystrokes
-node scripts/demo-home.js /tmp/lazycode-demo # build a fictional Claude home to try things on
-npm run screenshots                          # regenerate docs/screenshots (needs Chrome)
+npm test                                    # fixtures only, never touches ~/.claude
+lazycc --frame 120x36 --keys 'jj3'          # print one frame after some keystrokes
+node scripts/demo-home.js /tmp/lazycc-demo  # build a fictional Claude home to try things on
+npm run screenshots                         # regenerate docs/screenshots (needs Chrome)
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for how the code is laid out.
 
 ## License
 
-[MIT](LICENSE). lazycode is an independent project and is not affiliated with or endorsed by
+[MIT](LICENSE). lazyclaudecode is an independent project and is not affiliated with or endorsed by
 Anthropic. Claude and Claude Code are trademarks of Anthropic.
