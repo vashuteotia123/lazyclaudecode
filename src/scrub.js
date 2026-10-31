@@ -9,7 +9,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { buildTree, readJson, readRecords, segmentTree } from './store.js';
+import { buildTree, HARNESS_TAGS, readJson, readRecords, segmentTree } from './store.js';
 
 // Copied as written. Every one is an enum, a flag, a version or a model name.
 const KEEP = new Set([
@@ -64,22 +64,6 @@ const DROP = new Set(['input', 'toolUseResult']);
 // Token counts and cost are harmless and the detail pane shows them.
 const COUNTS = new Set(['usage', 'totalCostUSD', 'prNumber']);
 
-// Tags Claude Code wraps around harness text. promptText() decides what counts as a prompt from
-// these, so they survive with their contents replaced (a command name excepted).
-export const HARNESS_TAGS = [
-  'command-name',
-  'command-message',
-  'command-args',
-  'local-command-stdout',
-  'local-command-stderr',
-  'local-command-caveat',
-  'bash-input',
-  'bash-stdout',
-  'bash-stderr',
-  'task-notification',
-  'system-reminder',
-  'user-prompt-submit-hook',
-];
 const TAGGED = new RegExp(`<(${HARNESS_TAGS.join('|')})>([\\s\\S]*?)</\\1>`, 'g');
 const KNOWN_PREFIXES = ['[Request interrupted by user', 'Caveat: The messages below'];
 const BUILTIN_AGENTS = new Set(['general-purpose', 'Explore', 'Plan', 'statusline-setup', 'output-style-setup', 'claude-code-guide']);

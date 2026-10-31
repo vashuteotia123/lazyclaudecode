@@ -1,9 +1,11 @@
 #!/usr/bin/env node
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import { exportMarkdown, loadConfig, loadMeta } from '../src/ops.js';
 import { captureSession, treeLines } from '../src/scrub.js';
 import { readJson, scan, searchSession } from '../src/store.js';
 import { clean, fit, rel, strip, tilde } from '../src/term.js';
+import { compareVersions, TESTED_UP_TO } from '../src/tested.js';
 import { createApp, parseKeys, run } from '../src/tui.js';
 
 const USAGE = `lazyclaudecode — a lazygit-style browser for Claude Code sessions
@@ -15,6 +17,7 @@ const USAGE = `lazyclaudecode — a lazygit-style browser for Claude Code sessio
                              write one session as markdown (id may be a prefix)
   lazycc capture <id> [--out <dir>]
                              write a scrubbed copy of a session for a bug report
+  lazycc doctor              check your sessions against what this version understands
   lazycc --version           print the version
 
 lazycc is the short name for lazyclaudecode; both run the same program.
@@ -82,6 +85,36 @@ are the only text kept as written; check them before sharing:
 Branches, as lazycc sees them:
 
 ${treeLines(r.tree).map((l) => `  ${l}`).join('\n')}`);
+} else if (cmd === 'doctor') {
+  const pkg = readJson(new URL('../package.json', import.meta.url), {});
+  const { sessions, drift } = scan();
+  const newer = (v) => v && compareVersions(v, TESTED_UP_TO) > 0;
+  const installed = /^(\d+\.\d+\.\d+)/.exec(spawnSync('claude', ['--version'], { encoding: 'utf8', timeout: 10000 }).stdout || '')?.[1];
+  const out = [`lazyclaudecode ${pkg.version}, checked against Claude Code sessions up to ${TESTED_UP_TO}.`];
+  out.push(`Claude Code installed: ${installed ? `${installed}${newer(installed) ? ' (newer than checked)' : ''}` : 'not found on PATH'}`, '');
+  const byVersion = new Map();
+  for (const s of sessions) byVersion.set(s.version || 'unknown', (byVersion.get(s.version || 'unknown') || 0) + 1);
+  out.push(`Sessions by the Claude Code version that last wrote them (${sessions.length} in all):`);
+  for (const [v, n] of [...byVersion].sort((a, b) => compareVersions(b[0], a[0]))) out.push(`  ${v.padEnd(10)} ${String(n).padStart(4)}${newer(v) ? '   newer than checked' : ''}`);
+  const list = (title, entries, what) => {
+    out.push('', title);
+    if (!entries.length) return out.push('  none');
+    for (const [name, e] of entries.sort((a, b) => b[1].count - a[1].count)) out.push(`  ${name.padEnd(28)} ${String(e.count).padStart(5)} ${what} in ${e.sessions.length} session${e.sessions.length === 1 ? '' : 's'}, e.g. ${e.sessions[0].slice(0, 8)}`);
+  };
+  list('Record types this version has not seen:', Object.entries(drift.types), 'records');
+  list('Prompts that start with an unfamiliar tag (probably harness text shown as a prompt):', Object.entries(drift.tags), 'prompts');
+  const odd = Object.keys(drift.types).length + Object.keys(drift.tags).length;
+  out.push(
+    '',
+    odd || [...byVersion.keys()].some(newer)
+      ? `Newer sessions usually still read correctly. If one looks wrong (missing branches, harness text
+shown as prompts), capture a scrubbed copy and attach it to an issue:
+
+  lazycc capture <session id>
+  ${pkg.bugs || 'https://github.com/vashuteotia123/lazyclaudecode/issues'}`
+      : 'Nothing unfamiliar found.',
+  );
+  console.log(out.join('\n'));
 } else if (cmd === '--frame') {
   // Render one frame without a terminal, after optional keystrokes: lazycc --frame 120x36 --keys 'jj3'
   const [w, h] = (args[1] || '120x36').split('x').map(Number);

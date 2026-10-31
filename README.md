@@ -178,7 +178,12 @@ lazycc list [--json]             # sessions, most recent first
 lazycc search <query>            # sessions whose prompts or replies mention the query
 lazycc export <id> [--full] [--out <dir>]
 lazycc capture <id> [--out <dir>]  # scrubbed copy of a session, for bug reports
+lazycc doctor                      # check your sessions against what this version understands
 ```
+
+`doctor` lists the Claude Code versions your sessions come from and anything in them this version
+of lazyclaudecode has not seen before: new record types, or prompts that start with an unfamiliar
+tag. When it finds any, the interface also says so once at startup.
 
 `capture` writes a copy of a session with every prompt, reply, tool input and output, path, title
 and branch name replaced, keeping only its structure. Attach it to an issue when lazyclaudecode shows a
