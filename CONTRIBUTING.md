@@ -77,6 +77,9 @@ with `UPDATE_SNAPSHOTS=1 npm test` and review the diff.
 2. Merge that to `main`.
 3. Publish a GitHub release whose tag is `v` plus the version, for example `v0.2.0`.
 
-The `release` workflow then runs the tests, publishes the version to npm and attaches the package
-to the release. It refuses a tag that does not match `package.json`, and skips the npm step when
-that version is already published.
+The `release` workflow then runs the tests, stages the version on npm and attaches the package to
+the release. It refuses a tag that does not match `package.json`, and skips the npm step when that
+version is already published.
+
+4. Approve the staged version. Nothing reaches npm users until a maintainer does: either on the
+   package's page on npmjs.com, or with `npm stage list` followed by `npm stage approve <stage-id>`.

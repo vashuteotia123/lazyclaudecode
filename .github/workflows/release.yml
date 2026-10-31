@@ -1,7 +1,8 @@
 name: release
-# Publishing a GitHub release for tag vX.Y.Z publishes that version to npm and attaches the
-# package to the release. npm authenticates this workflow through trusted publishing, so there is
-# no token to store: https://docs.npmjs.com/trusted-publishers
+# Publishing a GitHub release for tag vX.Y.Z stages that version on npm and attaches the package to
+# the release. npm authenticates this workflow through trusted publishing, so there is no token to
+# store, and the trusted publisher may only stage: a maintainer approves each staged version on
+# npmjs.com (or with `npm stage approve`) before it goes live, so this workflow alone cannot ship.
 on:
   release:
     types: [published]
@@ -28,12 +29,13 @@ jobs:
             exit 1
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
-      - name: Publish to npm
+      - name: Stage on npm
         run: |
           if npm view "@vashuteotia123/lazyclaudecode@${{ steps.version.outputs.version }}" version >/dev/null 2>&1; then
             echo "Version ${{ steps.version.outputs.version }} is already on npm; skipping."
           else
-            npm publish --access public
+            npm stage publish .
+            echo "::notice::Staged ${{ steps.version.outputs.version }}. Approve it on npmjs.com or with: npm stage list, then npm stage approve <stage-id>"
           fi
       - name: Attach the package to the release
         env:
