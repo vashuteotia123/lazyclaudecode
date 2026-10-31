@@ -177,7 +177,12 @@ Press `?` inside the interface for the full list.
 lazycc list [--json]             # sessions, most recent first
 lazycc search <query>            # sessions whose prompts or replies mention the query
 lazycc export <id> [--full] [--out <dir>]
+lazycc capture <id> [--out <dir>]  # scrubbed copy of a session, for bug reports
 ```
+
+`capture` writes a copy of a session with every prompt, reply, tool input and output, path, title
+and branch name replaced, keeping only its structure. Attach it to an issue when lazycode shows a
+session wrongly; it lists the few words it kept as written so you can check before sharing.
 
 ## What it touches
 
