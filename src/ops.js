@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { ancestors, buildTree, claudeDir, dataDir, loadTranscript, munge, readJson, readRecords, writeJson } from './store.js';
+import { ancestors, buildTree, claudeDir, dataDir, leafCount, loadTranscript, munge, readJson, readRecords, segmentTree, writeJson } from './store.js';
 import { dt, ymd } from './term.js';
 
 const metaFile = (cd) => path.join(dataDir(cd), 'meta.json');
@@ -106,9 +106,26 @@ export function purgeTrash(trashIds, cd = claudeDir()) {
 
 const CARRIED = new Set(['ai-title', 'custom-title', 'agent-name', 'mode', 'permission-mode']);
 
+// Read a freshly written checkout back and list what is wrong with it: anything that would make
+// it a different conversation from the branch that was asked for.
+export function verifyCheckout(file, { id, prompts, sourceUuids }) {
+  const recs = readRecords(file);
+  const problems = [];
+  if (recs.some((d) => d.sessionId !== id)) problems.push('some records belong to another session');
+  const uuids = new Set(recs.filter((d) => d.uuid).map((d) => d.uuid));
+  if (recs.some((d) => d.parentUuid && sourceUuids.has(d.parentUuid) && !uuids.has(d.parentUuid))) problems.push('some messages point at a parent that was left behind');
+  const tree = buildTree(recs);
+  const branches = leafCount(segmentTree(tree));
+  if (branches !== 1) problems.push(`it has ${branches} branches instead of one`);
+  const got = [...tree.nodes.values()].filter((n) => n.prompt).sort((a, b) => a.i - b.i).map((n) => n.prompt);
+  if (got.length !== prompts.length || got.some((p, i) => p !== prompts[i])) problems.push(`its prompts differ from the branch (${got.length} instead of ${prompts.length})`);
+  return problems;
+}
+
 // Write one branch of a session out as a new session file and return its id. The source is not
 // modified. Like Claude Code's own fork, records are copied as they are apart from the session id.
-export function extractBranch(s, tipUuid, { cd = claudeDir(), destCwd = '', title = '' } = {}) {
+// The result is read back before it is kept; if it is not that branch, it is removed again.
+export function extractBranch(s, tipUuid, { cd = claudeDir(), destCwd = '', title = '', check = verifyCheckout } = {}) {
   const recs = readRecords(s.file);
   const tree = buildTree(recs);
   const tip = (tipUuid && tree.nodes.get(tipUuid)) || tree.active;
@@ -139,7 +156,13 @@ export function extractBranch(s, tipUuid, { cd = claudeDir(), destCwd = '', titl
   if (title) out.push({ type: 'custom-title', customTitle: title, sessionId: id }, { type: 'agent-name', agentName: title, sessionId: id });
   const dir = destCwd ? path.join(cd, 'projects', munge(destCwd)) : path.dirname(s.file);
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, `${id}.jsonl`), out.map((d) => `${JSON.stringify(d)}\n`).join(''), { flag: 'wx' });
+  const file = path.join(dir, `${id}.jsonl`);
+  fs.writeFileSync(file, out.map((d) => `${JSON.stringify(d)}\n`).join(''), { flag: 'wx' });
+  const problems = check(file, { id, prompts: ancestors(tip).filter((n) => n.prompt).map((n) => n.prompt), sourceUuids: new Set(tree.nodes.keys()) });
+  if (problems.length) {
+    fs.rmSync(file, { force: true });
+    throw new Error(`the copy did not come out right (${problems.join('; ')}), so it was removed. The original session is unchanged.`);
+  }
   return id;
 }
 
