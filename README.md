@@ -181,7 +181,7 @@ lazycc capture <id> [--out <dir>]  # scrubbed copy of a session, for bug reports
 ```
 
 `capture` writes a copy of a session with every prompt, reply, tool input and output, path, title
-and branch name replaced, keeping only its structure. Attach it to an issue when lazycode shows a
+and branch name replaced, keeping only its structure. Attach it to an issue when lazyclaudecode shows a
 session wrongly; it lists the few words it kept as written so you can check before sharing.
 
 ## What it touches
