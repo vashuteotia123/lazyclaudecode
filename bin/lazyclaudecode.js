@@ -1,5 +1,7 @@
 #!/usr/bin/env node
+import fs from 'node:fs';
 import { exportMarkdown, loadConfig, loadMeta } from '../src/ops.js';
+import { captureSession, treeLines } from '../src/scrub.js';
 import { readJson, scan, searchSession } from '../src/store.js';
 import { clean, fit, rel, strip, tilde } from '../src/term.js';
 import { createApp, parseKeys, run } from '../src/tui.js';
@@ -11,6 +13,8 @@ const USAGE = `lazyclaudecode — a lazygit-style browser for Claude Code sessio
   lazycc search <query>      find sessions whose prompts or replies mention the query
   lazycc export <id> [--full] [--out <dir>]
                              write one session as markdown (id may be a prefix)
+  lazycc capture <id> [--out <dir>]
+                             write a scrubbed copy of a session for a bug report
   lazycc --version           print the version
 
 lazycc is the short name for lazyclaudecode; both run the same program.
@@ -29,6 +33,16 @@ function table(sessions, extra = () => '') {
 }
 
 const cmd = args[0];
+
+function findSession(prefix) {
+  const { sessions } = scan();
+  const found = sessions.filter((s) => prefix && s.id.startsWith(prefix));
+  if (found.length !== 1) {
+    console.error(found.length ? `"${prefix}" matches ${found.length} sessions; give more of the id.` : `No session id starts with "${prefix || ''}".`);
+    process.exit(1);
+  }
+  return found[0];
+}
 if (flag('--help') || flag('-h')) console.log(USAGE);
 else if (flag('--version') || flag('-v')) console.log(readJson(new URL('../package.json', import.meta.url), {}).version);
 else if (cmd === 'list') {
@@ -48,14 +62,26 @@ else if (cmd === 'list') {
   }
   table(sessions.filter((s) => hits.has(s.id)), (s) => `\n          ${hits.get(s.id).count}×  …${clean(hits.get(s.id).snippet)}…`);
 } else if (cmd === 'export') {
-  const { sessions } = scan();
-  const found = sessions.filter((s) => args[1] && s.id.startsWith(args[1]));
-  if (found.length !== 1) {
-    console.error(found.length ? `"${args[1]}" matches ${found.length} sessions; give more of the id.` : `No session id starts with "${args[1] || ''}".`);
+  const s = findSession(args[1]);
+  console.log(exportMarkdown(s, { full: flag('--full'), outDir: value('--out') || loadConfig().exportDir, tags: loadMeta().sessions[s.id]?.tags || [] }));
+} else if (cmd === 'capture') {
+  const s = findSession(args[1]);
+  const out = value('--out') || `lazycc-capture-${s.id.slice(0, 8)}`;
+  if (fs.existsSync(out) && fs.readdirSync(out).length) {
+    console.error(`${out} is not empty; pick another folder with --out.`);
     process.exit(1);
   }
-  const s = found[0];
-  console.log(exportMarkdown(s, { full: flag('--full'), outDir: value('--out') || loadConfig().exportDir, tags: loadMeta().sessions[s.id]?.tags || [] }));
+  const r = captureSession(s, out);
+  console.log(`Wrote a scrubbed copy of ${r.records} records${r.agents ? ` and ${r.agents} subagents` : ''} to ${out}/
+
+Every prompt, reply, tool input and output, path, title and branch name is replaced. These words
+are the only text kept as written; check them before sharing:
+
+  ${r.kept.join(', ')}
+
+Branches, as lazycc sees them:
+
+${treeLines(r.tree).map((l) => `  ${l}`).join('\n')}`);
 } else if (cmd === '--frame') {
   // Render one frame without a terminal, after optional keystrokes: lazycc --frame 120x36 --keys 'jj3'
   const [w, h] = (args[1] || '120x36').split('x').map(Number);

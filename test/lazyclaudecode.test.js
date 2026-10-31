@@ -8,6 +8,7 @@ import { loadTranscript, munge, scan, searchSession } from '../src/store.js';
 import { fit, highlight, strip, width, wrap } from '../src/term.js';
 import { createApp, parseKeys } from '../src/tui.js';
 import { buildDemoHome } from '../scripts/demo-home.js';
+import { captureSession } from '../src/scrub.js';
 
 const A = '11111111-1111-4111-8111-111111111111';
 const B = '22222222-2222-4222-8222-222222222222';
@@ -237,4 +238,62 @@ test('the demo home shows every feature the screenshots rely on', () => {
   assert.ok(data.sessions.some((x) => x.worktree === 'rate-limit' && x.project === s.project));
   assert.equal(listTrash(cd).length, 2);
   assert.ok(searchSession(s, 'backoff').count > 1);
+});
+
+// Every place a session can hold something private, each holding a marker that must not survive.
+test('a capture keeps the structure and none of the content', () => {
+  const { cd, dir } = fixture();
+  const C = '33333333-3333-4333-8333-333333333333';
+  const cwd = '/Users/SECRETUSER/acme-SECRETREPO/.claude/worktrees/SECRETTREE';
+  const t = (i) => `2025-03-04T05:0${i}:07.000Z`;
+  const base = { sessionId: C, cwd, gitBranch: 'SECRETBRANCH', version: '2.1.999', isSidechain: false, slug: 'SECRETSLUG' };
+  const recs = [
+    { type: 'ai-title', aiTitle: 'SECRETTITLE', sessionId: C },
+    { type: 'custom-title', customTitle: 'SECRETCUSTOM', sessionId: C },
+    { ...base, uuid: 'SECRETUUID1', parentUuid: null, timestamp: t(1), type: 'user', message: { role: 'user', content: '<system-reminder>SECRETREMINDER</system-reminder>\nSECRETPROMPT' } },
+    { ...base, uuid: 'SECRETUUID2', parentUuid: 'SECRETUUID1', timestamp: t(2), type: 'assistant', message: { id: 'msg_SECRETMSG', role: 'assistant', model: 'claude-test', usage: { output_tokens: 7, service_tier: 'SECRETTIER' }, content: [
+      { type: 'thinking', thinking: 'SECRETTHINK', signature: 'SECRETSIG' },
+      { type: 'text', text: 'SECRETREPLY' },
+      { type: 'tool_use', id: 'toolu_SECRETID', name: 'mcp__SECRETCORP__deploy', input: { command: 'SECRETCMD' } },
+      { type: 'tool_use', id: 'toolu_SECRETTWO', name: 'Bash', input: { command: 'SECRETBASHCMD' } },
+    ] } },
+    { ...base, uuid: 'SECRETUUID3', parentUuid: 'SECRETUUID2', timestamp: t(3), type: 'user', toolUseResult: { stdout: 'SECRETTUR' }, message: { role: 'user', content: [
+      { type: 'tool_result', tool_use_id: 'toolu_SECRETID', content: 'SECRETOUTPUT' },
+      { type: 'tool_result', tool_use_id: 'toolu_SECRETTWO', content: [{ type: 'text', text: 'SECRETOUTPUT2' }, { type: 'image', source: { type: 'base64', media_type: 'image/png', data: 'SECRETIMAGE' } }] },
+    ] } },
+    { ...base, uuid: 'SECRETUUID4', parentUuid: 'SECRETUUID3', timestamp: t(4), type: 'user', message: { role: 'user', content: '<command-name>/review</command-name>\n<command-args>SECRETARGS</command-args>' } },
+    { ...base, uuid: 'SECRETUUID5', parentUuid: 'SECRETUUID4', timestamp: t(5), type: 'user', message: { role: 'user', content: '<bash-input>SECRETBASH</bash-input>' } },
+    { ...base, uuid: 'SECRETUUID6', parentUuid: 'SECRETUUID5', timestamp: t(6), type: 'user', message: { role: 'user', content: '<new-harness-tag>SECRETNEWTAG</new-harness-tag>' } },
+    { ...base, uuid: 'SECRETUUID7', parentUuid: 'SECRETUUID6', timestamp: t(7), type: 'attachment', attachment: { type: 'file', filename: '/Users/SECRETUSER/notes.txt', content: 'SECRETATTACH' } },
+    { ...base, uuid: 'SECRETUUID8', parentUuid: 'SECRETUUID7', timestamp: t(8), type: 'system', subtype: 'local_command', content: 'SECRETSYSTEM', newField: 'SECRETUNKNOWN', nested: { '/Users/SECRETUSER/file.ts': { backup: 'SECRETBACKUP' } } },
+    { type: 'file-history-snapshot', messageId: 'SECRETUUID8', snapshot: { trackedFileBackups: { '/Users/SECRETUSER/a.ts': { backupFileName: 'SECRETFILE' } } } },
+    { type: 'pr-link', prNumber: 12, prUrl: 'https://github.com/SECRETORG/x/pull/12', prRepository: 'SECRETORG/x', sessionId: C },
+    { type: 'last-prompt', lastPrompt: 'SECRETLAST', leafUuid: 'SECRETUUID8', sessionId: C },
+  ];
+  fs.writeFileSync(path.join(dir, `${C}.jsonl`), recs.map((d) => JSON.stringify(d)).join('\n') + '\n');
+  fs.mkdirSync(path.join(dir, C, 'subagents'), { recursive: true });
+  fs.writeFileSync(path.join(dir, C, 'subagents', 'agent-SECRETAGENT.jsonl'), JSON.stringify({ ...base, uuid: 's1', parentUuid: null, isSidechain: true, timestamp: t(9), type: 'user', message: { role: 'user', content: 'SECRETAGENTPROMPT' } }) + '\n');
+  fs.writeFileSync(path.join(dir, C, 'subagents', 'agent-SECRETAGENT.meta.json'), JSON.stringify({ agentType: 'SECRETAGENTTYPE', description: 'SECRETDESC' }));
+
+  const s = get(cd, C);
+  const out = path.join(cd, 'capture');
+  const r = captureSession(s, out);
+  const files = fs.readdirSync(out, { recursive: true }).map((f) => path.join(out, f)).filter((f) => fs.statSync(f).isFile());
+  const all = files.map((f) => `${f.slice(out.length)}\n${fs.readFileSync(f, 'utf8')}`).join('\n') + r.kept.join('\n');
+  const leaks = [...new Set(all.match(/SECRET[A-Z0-9]*/g) || [])];
+  assert.deepEqual(leaks, [], 'nothing marked SECRET survives');
+  for (const gone of ['2025-03-04', '/Users/']) assert.ok(!all.includes(gone), `${gone} is replaced`);
+  assert.equal(files.length, 3, 'the session, one subagent and its metadata');
+
+  // The copy reads the same way the original does.
+  const lines = fs.readFileSync(path.join(out, 'session.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+  const fake = lines.find((d) => d.type === 'user').sessionId;
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'lazyclaudecode-cap-'));
+  const copyDir = path.join(home, 'projects', munge(lines.find((d) => d.cwd).cwd));
+  fs.mkdirSync(copyDir, { recursive: true });
+  fs.copyFileSync(path.join(out, 'session.jsonl'), path.join(copyDir, `${fake}.jsonl`));
+  const copy = get(home, fake);
+  for (const k of ['prompts', 'turns', 'tools', 'branches', 'version']) assert.equal(copy[k], s[k], k);
+  assert.match(copy.cwd, /^\/home\/user\/project\/\.claude\/worktrees\/worktree-1$/, 'a worktree path still looks like one');
+  assert.ok(r.kept.includes('new-harness-tag') && r.kept.includes('/review') && r.kept.includes('Bash'));
 });
