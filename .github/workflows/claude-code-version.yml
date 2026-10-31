@@ -1,0 +1,44 @@
+name: claude-code-version
+# Once a week, compare the latest Claude Code release with the newest version in the test corpus
+# (src/tested.js). When Claude Code is ahead, keep one open issue saying so; close it once a
+# fixture from the new version has been added. This never fails the build: Claude Code releases
+# faster than fixtures can be captured, and a permanently red check would teach everyone to ignore it.
+on:
+  schedule:
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Compare with the newest tested version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          latest=$(npm view @anthropic-ai/claude-code version)
+          tested=$(node --input-type=module -e "import { TESTED_UP_TO } from './src/tested.js'; console.log(TESTED_UP_TO)")
+          ahead=$(node --input-type=module -e "import { compareVersions } from './src/tested.js'; console.log(compareVersions('$latest', '$tested') > 0)")
+          title="Claude Code is ahead of the test fixtures"
+          existing=$(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[0].number // empty')
+          if [ "$ahead" != "true" ]; then
+            echo "The fixtures cover Claude Code $latest."
+            if [ -n "$existing" ]; then gh issue close "$existing" --comment "Fixtures now cover Claude Code $tested."; fi
+            exit 0
+          fi
+          body="Claude Code $latest is out; the newest session in the test corpus is from $tested.
+
+          To catch up, use Claude Code $latest for a while (ideally editing or rewinding a prompt at least once), then:
+
+              node scripts/add-fixture.js <session id>
+
+          Check the printed branch tree against what you did, raise \`TESTED_UP_TO\` in \`src/tested.js\` and the version in the README, and open a PR.
+
+          _Updated by the weekly claude-code-version workflow._"
+          if [ -n "$existing" ]; then gh issue edit "$existing" --body "$body"; else gh issue create --title "$title" --body "$body"; fi

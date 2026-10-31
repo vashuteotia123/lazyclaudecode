@@ -207,8 +207,8 @@ picker.
 
 ## Limits
 
-- Claude Code's session format is undocumented and can change. lazyclaudecode was built and checked
-  against Claude Code 2.1.292.
+- Claude Code's session format is undocumented and can change. lazyclaudecode has been checked
+  against sessions from Claude Code up to 2.1.314; `lazycc doctor` shows how yours compare.
 - A fork records no link to its parent, so lazyclaudecode pairs sessions that begin with the same message
   and treats the oldest as the parent. A fork of a fork shows under the original.
 - A checked-out branch does not carry file-edit checkpoints, so `/rewind` there restores the
