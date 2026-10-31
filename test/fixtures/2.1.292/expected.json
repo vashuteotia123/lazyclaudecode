@@ -1,0 +1,14 @@
+{
+  "claudeCode": "2.1.292",
+  "prompts": 10,
+  "replies": 49,
+  "toolCalls": 115,
+  "compactions": 1,
+  "branches": 1,
+  "subagents": 0,
+  "tree": {
+    "prompts": 10,
+    "active": true,
+    "first": "text 3"
+  }
+}

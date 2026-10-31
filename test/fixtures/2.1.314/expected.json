@@ -1,0 +1,38 @@
+{
+  "claudeCode": "2.1.314",
+  "prompts": 35,
+  "replies": 124,
+  "toolCalls": 112,
+  "compactions": 0,
+  "branches": 3,
+  "subagents": 0,
+  "tree": {
+    "prompts": 4,
+    "active": true,
+    "first": "text 1",
+    "children": [
+      {
+        "prompts": 1,
+        "active": false,
+        "first": "text 41"
+      },
+      {
+        "prompts": 17,
+        "active": true,
+        "first": "text 42",
+        "children": [
+          {
+            "prompts": 1,
+            "active": false,
+            "first": "text 98"
+          },
+          {
+            "prompts": 12,
+            "active": true,
+            "first": "text 99"
+          }
+        ]
+      }
+    ]
+  }
+}

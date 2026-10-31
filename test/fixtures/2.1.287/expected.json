@@ -1,0 +1,50 @@
+{
+  "claudeCode": "2.1.287",
+  "prompts": 75,
+  "replies": 711,
+  "toolCalls": 772,
+  "compactions": 1,
+  "branches": 4,
+  "subagents": 0,
+  "tree": {
+    "prompts": 45,
+    "active": true,
+    "first": "/model …",
+    "children": [
+      {
+        "prompts": 1,
+        "active": false,
+        "first": "text 1232"
+      },
+      {
+        "prompts": 18,
+        "active": true,
+        "first": "/compact …",
+        "children": [
+          {
+            "prompts": 1,
+            "active": false,
+            "first": "text 1451"
+          },
+          {
+            "prompts": 7,
+            "active": true,
+            "first": "text 1453",
+            "children": [
+              {
+                "prompts": 1,
+                "active": false,
+                "first": "text 1528"
+              },
+              {
+                "prompts": 2,
+                "active": true,
+                "first": "text 1530"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "claudeCode": "2.1.296",
+  "prompts": 5,
+  "replies": 5,
+  "toolCalls": 0,
+  "compactions": 0,
+  "branches": 1,
+  "subagents": 0,
+  "tree": {
+    "prompts": 5,
+    "active": true,
+    "first": "/grill-me …"
+  }
+}
