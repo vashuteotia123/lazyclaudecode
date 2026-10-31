@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
-import { exportMarkdown, extractBranch, listTrash, loadMeta, purgeTrash, renameSession, restoreTrash, saveMeta, trashSessions } from '../src/ops.js';
+import { exportMarkdown, extractBranch, verifyCheckout, listTrash, loadMeta, purgeTrash, renameSession, restoreTrash, saveMeta, trashSessions } from '../src/ops.js';
 import { loadTranscript, munge, scan, searchSession } from '../src/store.js';
 import { fit, highlight, strip, width, wrap } from '../src/term.js';
 import { createApp, parseKeys } from '../src/tui.js';
@@ -296,4 +296,28 @@ test('a capture keeps the structure and none of the content', () => {
   for (const k of ['prompts', 'turns', 'tools', 'branches', 'version']) assert.equal(copy[k], s[k], k);
   assert.match(copy.cwd, /^\/home\/user\/project\/\.claude\/worktrees\/worktree-1$/, 'a worktree path still looks like one');
   assert.ok(r.kept.includes('new-harness-tag') && r.kept.includes('/review') && r.kept.includes('Bash'));
+});
+
+test('a checkout is read back and removed if it is not the branch asked for', () => {
+  const { cd, dir } = fixture();
+  const s = get(cd, A);
+  const tip = s.tree.children[0].tip;
+  const before = fs.readdirSync(dir).length;
+  assert.throws(() => extractBranch(s, tip, { cd, check: () => ['it has 2 branches instead of one'] }), /it has 2 branches instead of one.*removed.*original session is unchanged/);
+  assert.equal(fs.readdirSync(dir).length, before, 'nothing is left behind');
+
+  // Each kind of damage is caught.
+  const id = extractBranch(s, tip, { cd });
+  const file = path.join(dir, `${id}.jsonl`);
+  const good = fs.readFileSync(file, 'utf8');
+  const expect = { id, prompts: ['add retry logic', 'try redis'], sourceUuids: new Set(['u1', 'a1', 'a2', 'r1', 'r2', 'a3', 'u2', 'a4', 'u3']) };
+  assert.deepEqual(verifyCheckout(file, expect), []);
+  const damage = (fn) => {
+    fs.writeFileSync(file, good.trim().split('\n').map((l) => JSON.parse(l)).flatMap(fn).map((d) => JSON.stringify(d)).join('\n') + '\n');
+    return verifyCheckout(file, expect).join(' | ');
+  };
+  assert.match(damage((d) => [{ ...d, sessionId: d.uuid === 'a4' ? B : d.sessionId }]), /another session/);
+  assert.match(damage((d) => (d.uuid === 'a3' ? [] : [d])), /parent that was left behind/);
+  assert.match(damage((d) => (d.uuid === 'u2' ? [d, { ...d, uuid: 'u2b', message: { role: 'user', content: 'a rival' } }] : [d])), /2 branches instead of one/);
+  assert.match(damage((d) => (d.uuid === 'u2' ? [{ ...d, message: { role: 'user', content: 'something else' } }] : [d])), /prompts differ/);
 });
