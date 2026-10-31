@@ -10,7 +10,8 @@ import { fit, highlight, strip, width, wrap } from '../src/term.js';
 import { createApp, parseKeys } from '../src/tui.js';
 import { buildDemoHome } from '../scripts/demo-home.js';
 import { captureSession } from '../src/scrub.js';
-import { compareVersions } from '../src/tested.js';
+import { compareVersions, TESTED_UP_TO } from '../src/tested.js';
+import { listFixtures } from '../scripts/fixtures.js';
 
 const A = '11111111-1111-4111-8111-111111111111';
 const B = '22222222-2222-4222-8222-222222222222';
@@ -354,4 +355,16 @@ test('versions compare numerically', () => {
   assert.ok(compareVersions('2.1.316', '2.1.314') > 0);
   assert.ok(compareVersions('2.1.99', '2.1.100') < 0);
   assert.equal(compareVersions('2.1.0', '2.1'), 0);
+});
+
+test('the tested version matches the newest fixture and the README', (t) => {
+  const versions = listFixtures().map((n) => n.replace(/-\d+$/, ''));
+  if (versions.length) assert.equal(versions.sort(compareVersions).pop(), TESTED_UP_TO, 'TESTED_UP_TO is the newest fixture version');
+  assert.ok(fs.readFileSync(new URL('../README.md', import.meta.url), 'utf8').includes(`Claude Code up to ${TESTED_UP_TO}`), 'the README names the tested version');
+
+  // A nudge, never a failure: the moment you have a newer Claude Code is the cheapest time to capture.
+  const installed = /^(\d+\.\d+\.\d+)/.exec(spawnSync('claude', ['--version'], { encoding: 'utf8', timeout: 10000 }).stdout || '')?.[1];
+  if (installed && compareVersions(installed, TESTED_UP_TO) > 0) {
+    t.diagnostic(`Claude Code ${installed} is newer than the newest fixture (${TESTED_UP_TO}). Consider: node scripts/add-fixture.js <session id>`);
+  }
 });
