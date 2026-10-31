@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -9,6 +10,7 @@ import { fit, highlight, strip, width, wrap } from '../src/term.js';
 import { createApp, parseKeys } from '../src/tui.js';
 import { buildDemoHome } from '../scripts/demo-home.js';
 import { captureSession } from '../src/scrub.js';
+import { compareVersions } from '../src/tested.js';
 
 const A = '11111111-1111-4111-8111-111111111111';
 const B = '22222222-2222-4222-8222-222222222222';
@@ -320,4 +322,36 @@ test('a checkout is read back and removed if it is not the branch asked for', ()
   assert.match(damage((d) => (d.uuid === 'a3' ? [] : [d])), /parent that was left behind/);
   assert.match(damage((d) => (d.uuid === 'u2' ? [d, { ...d, uuid: 'u2b', message: { role: 'user', content: 'a rival' } }] : [d])), /2 branches instead of one/);
   assert.match(damage((d) => (d.uuid === 'u2' ? [{ ...d, message: { role: 'user', content: 'something else' } }] : [d])), /prompts differ/);
+});
+
+test('records and tags from a newer format are reported, and only those', () => {
+  const { cd, dir } = fixture();
+  const clean = createApp({ cd, sync: true, useCache: false });
+  assert.deepEqual(scan({ cd, useCache: false }).drift, { types: {}, tags: {} }, 'the fixture uses only known parts of the format');
+  assert.equal(clean.S.msg, '');
+
+  const file = path.join(dir, `${A}.jsonl`);
+  const at = (uuid, parentUuid, extra) => JSON.stringify({ uuid, parentUuid, sessionId: A, cwd: '/x', isSidechain: false, timestamp: '2026-09-01T12:00:00Z', ...extra });
+  fs.appendFileSync(file, `${[
+    at('n1', 'a6', { type: 'brand-new-record' }),
+    at('n2', 'n1', { type: 'user', message: { role: 'user', content: '<system-reminder>r</system-reminder><new-harness-note>done</new-harness-note>' } }),
+    at('n3', 'n2', { type: 'user', message: { role: 'user', content: '<command-name>/compact</command-name>' } }),
+  ].join('\n')}\n`);
+  const { drift } = scan({ cd, useCache: false });
+  assert.deepEqual(drift.types, { 'brand-new-record': { count: 1, sessions: [A] } });
+  assert.deepEqual(drift.tags, { 'new-harness-note': { count: 1, sessions: [A] } }, 'a known command is not reported');
+  assert.match(createApp({ cd, sync: true, useCache: false }).S.msg, /lazycc doctor/);
+
+  const doctor = spawnSync(process.execPath, [new URL('../bin/lazyclaudecode.js', import.meta.url).pathname, 'doctor'], { env: { ...process.env, CLAUDE_CONFIG_DIR: cd, PATH: '' }, encoding: 'utf8' });
+  assert.equal(doctor.status, 0);
+  assert.match(doctor.stdout, /Claude Code installed: not found on PATH/);
+  assert.match(doctor.stdout, /brand-new-record\s+1 records in 1 session, e\.g\. 11111111/);
+  assert.match(doctor.stdout, /new-harness-note\s+1 prompts in 1 session/);
+  assert.match(doctor.stdout, /lazycc capture <session id>/);
+});
+
+test('versions compare numerically', () => {
+  assert.ok(compareVersions('2.1.316', '2.1.314') > 0);
+  assert.ok(compareVersions('2.1.99', '2.1.100') < 0);
+  assert.equal(compareVersions('2.1.0', '2.1'), 0);
 });

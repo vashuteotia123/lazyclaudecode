@@ -90,6 +90,9 @@ export function createApp({ cd = claudeDir(), sync = false, useCache = true, cwd
     input: null,
     confirm: null,
   };
+  if (Object.keys(data.drift.types).length || Object.keys(data.drift.tags).length) {
+    S.msg = 'Some sessions use parts of the format this version has not seen and may show wrongly. lazycc doctor lists them.';
+  }
   const transcripts = new Map();
   let rendered = { key: '', lines: [], anchor: -1 };
   let loadTimer = null;

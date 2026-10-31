@@ -62,6 +62,57 @@ export function kindOf(d, side = false) {
   return 'prompt';
 }
 
+// Record types Claude Code is known to write. Anything else is a sign the format has moved on
+// since lazyclaudecode was last checked, and `lazycc doctor` lists it.
+export const KNOWN_TYPES = new Set([
+  'user',
+  'assistant',
+  'system',
+  'attachment',
+  'summary',
+  'last-prompt',
+  'ai-title',
+  'custom-title',
+  'agent-name',
+  'mode',
+  'permission-mode',
+  'atis-latch',
+  'pr-link',
+  'cost-state',
+  'tools-used',
+  'file-history-snapshot',
+  'file-history-delta',
+  'queue-operation',
+  'bridge-session',
+  'api-request',
+  'api-request-blob',
+  'api-request-shape',
+]);
+
+// Tags Claude Code wraps around harness text in user records. A prompt that starts with any other
+// tag is probably harness text lazyclaudecode does not recognise, and would be shown as a prompt.
+export const HARNESS_TAGS = [
+  'command-name',
+  'command-message',
+  'command-args',
+  'local-command-stdout',
+  'local-command-stderr',
+  'local-command-caveat',
+  'bash-input',
+  'bash-stdout',
+  'bash-stderr',
+  'task-notification',
+  'system-reminder',
+  'user-prompt-submit-hook',
+];
+
+// The tag a prompt starts with, when it is not one Claude Code is known to use.
+export function unfamiliarTag(d) {
+  const t = textOf(d.message?.content).replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, '').trimStart();
+  const m = /^<([a-zA-Z][\w-]{0,40})>/.exec(t);
+  return m && !HARNESS_TAGS.includes(m[1]) ? m[1] : '';
+}
+
 // What the human typed, or '' when the record is harness plumbing and not a prompt.
 export function promptText(d) {
   const content = d.message?.content;
@@ -224,7 +275,10 @@ function summarize(file, st) {
   const usage = new Map();
   const models = new Map();
   const prs = new Map();
+  const unknownTypes = {};
+  const unknownTags = {};
   for (const d of recs) {
+    if (d.type && !KNOWN_TYPES.has(d.type)) unknownTypes[d.type] = (unknownTypes[d.type] || 0) + 1;
     if (d.type === 'custom-title') custom = d.customTitle || '';
     else if (d.type === 'agent-name') agentName = d.agentName || '';
     else if (d.type === 'ai-title') ai = d.aiTitle || '';
@@ -258,6 +312,8 @@ function summarize(file, st) {
     } else if (kindOf(d) === 'prompt') {
       const p = promptText(d);
       if (p) {
+        const tag = unfamiliarTag(d);
+        if (tag) unknownTags[tag] = (unknownTags[tag] || 0) + 1;
         s.prompts++;
         if (!s.firstPrompt) s.firstPrompt = p.slice(0, 300);
         s.lastPrompt = p.slice(0, 300);
@@ -277,6 +333,8 @@ function summarize(file, st) {
   s.tree = segmentTree(buildTree(recs));
   s.branches = leafCount(s.tree);
   s.records = recs.length;
+  s.unknownTypes = unknownTypes;
+  s.unknownTags = unknownTags;
   return s;
 }
 
@@ -351,7 +409,7 @@ function repoOf(cwd, memo) {
 }
 
 // Bump when summarize() changes shape or meaning, so stale summaries are rebuilt.
-const CACHE_VERSION = 4;
+const CACHE_VERSION = 5;
 
 export function scan({ cd = claudeDir(), useCache = true } = {}) {
   const cacheFile = path.join(dataDir(cd), 'cache', 'index.json');
@@ -453,7 +511,18 @@ export function scan({ cd = claudeDir(), useCache = true } = {}) {
   const seen = new Map();
   for (const p of list) seen.set(p.name, (seen.get(p.name) || 0) + 1);
   for (const p of list) if (seen.get(p.name) > 1) p.name = `${path.basename(path.dirname(p.path))}/${p.name}`;
-  return { sessions, projects: list, byId };
+  // Signs that sessions use parts of the format this version has not been checked against.
+  const drift = { types: {}, tags: {} };
+  for (const s of sessions) {
+    for (const [kind, seen] of [['types', s.unknownTypes], ['tags', s.unknownTags]]) {
+      for (const [name, n] of Object.entries(seen || {})) {
+        const e = (drift[kind][name] ||= { count: 0, sessions: [] });
+        e.count += n;
+        e.sessions.push(s.id);
+      }
+    }
+  }
+  return { sessions, projects: list, byId, drift };
 }
 
 function briefInput(name, input) {
